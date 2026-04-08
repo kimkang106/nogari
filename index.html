@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>nogari.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --ocean-deep: #0a2540;
+    --ocean-mid: #0e3d6e;
+    --ocean-light: #1a6fa8;
+    --ocean-pale: #c8e8f5;
+    --foam: #e8f6fc;
+    --fish-body: #d4ecf7;
+    --fish-fin: #b8dff0;
+    --gold: #e8c547;
+    --gold-dark: #c9a82e;
+    --text-light: #f0f8ff;
+    --text-muted: #7fb8d8;
+    --scale-border: rgba(255,255,255,0.6);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    min-height: 100vh;
+    font-family: 'Pretendard', sans-serif;
+    background: var(--ocean-deep);
+    overflow-x: hidden;
+  }
+
+  /* ── 배경 물결 애니메이션 ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 80%, rgba(14,61,110,0.8) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 20%, rgba(26,111,168,0.4) 0%, transparent 50%),
+      linear-gradient(180deg, #051525 0%, #0a2540 40%, #0d3560 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle 1px at 15% 25%, rgba(200,232,245,0.3) 0%, transparent 100%),
+      radial-gradient(circle 1px at 45% 60%, rgba(200,232,245,0.2) 0%, transparent 100%),
+      radial-gradient(circle 1px at 75% 35%, rgba(200,232,245,0.25) 0%, transparent 100%),
+      radial-gradient(circle 1px at 85% 70%, rgba(200,232,245,0.15) 0%, transparent 100%);
+    z-index: 0;
+    pointer-events: none;
+    animation: bubbleFloat 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes bubbleFloat {
+    0% { transform: translateY(0); opacity: 0.6; }
+    100% { transform: translateY(-20px); opacity: 1; }
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+  }
+
+  /* ── 메인 페이지 ── */
+  #main-page { display: block; }
+  #sub-page { display: none; }
+
+  .page-header {
+    text-align: center;
+    padding: 32px 20px 12px;
+  }
+
+  .page-header h1 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: -0.5px;
+    line-height: 1.3;
+  }
+
+  .page-header p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── 물고기 SVG 컨테이너 ── */
+  #fish-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 10px 16px 0;
+    position: relative;
+  }
+
+  #fish-svg {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+    overflow: visible;
+  }
+
+  /* ── 비늘 썸네일 ── */
+  .scale-group {
+    cursor: pointer;
+  }
+
+  .scale-group .scale-img {
+    transition: filter 0.2s;
+  }
+
+  .scale-group:hover .scale-img {
+    filter: brightness(1.2) saturate(1.3);
+  }
+
+  .scale-group .scale-border {
+    transition: stroke-opacity 0.2s, stroke-width 0.2s;
+  }
+
+  .scale-group:hover .scale-border {
+    stroke-opacity: 1;
+    stroke-width: 3;
+  }
+
+  /* ── 눈 애니메이션 ── */
+  .eye-pupil {
+    animation: eyeRoam 5s ease-in-out infinite;
+  }
+
+  @keyframes eyeRoam {
+    0%   { transform: translate(0px,  0px); }
+    15%  { transform: translate(4px, -3px); }
+    30%  { transform: translate(5px,  1px); }
+    50%  { transform: translate(2px,  4px); }
+    65%  { transform: translate(-3px, 2px); }
+    80%  { transform: translate(-4px,-2px); }
+    100% { transform: translate(0px,  0px); }
+  }
+
+  /* ── 물고기 꼬리 흔들기 ── */
+  #fish-tail {
+    transform-origin: 185px 195px;
+    animation: tailWag 3s ease-in-out infinite;
+  }
+
+  @keyframes tailWag {
+    0%,100% { transform: rotate(0deg); }
+    25%     { transform: rotate(4deg); }
+    75%     { transform: rotate(-4deg); }
+  }
+
+  /* ── 상태 표시 ── */
+  #status-bar {
+    text-align: center;
+    padding: 10px 20px 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  #status-bar .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    margin-right: 6px;
+    vertical-align: middle;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── 설정 버튼 ── */
+  #config-btn {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--ocean-mid);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, color 0.2s;
+    z-index: 100;
+  }
+
+  #config-btn:hover {
+    background: var(--ocean-light);
+    color: white;
+  }
+
+  /* ── 설정 모달 ── */
+  #config-modal {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  #config-modal.open { display: flex; }
+
+  .modal-box {
+    background: #0d2d4a;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .modal-box h2 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 18px;
+    color: var(--text-light);
+    margin-bottom: 20px;
+  }
+
+  .field-group {
+    margin-bottom: 16px;
+  }
+
+  .field-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .field-group input {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 13px;
+    font-family: 'Pretendard', monospace;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field-group input:focus {
+    border-color: var(--ocean-light);
+  }
+
+  .field-group .hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    opacity: 0.8;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .btn-primary {
+    flex: 1;
+    padding: 11px;
+    background: var(--ocean-light);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-family: 'Pretendard', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-primary:hover { background: #2080b8; }
+
+  .btn-secondary {
+    padding: 11px 20px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-family: 'Pretendard', sans-serif;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: rgba(255,255,255,0.35); }
+
+  .setup-guide {
+    background: rgba(232,197,71,0.08);
+    border: 1px solid rgba(232,197,71,0.2);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 20px;
+  }
+
+  .setup-guide p {
+    font-size: 12px;
+    color: #e8c547cc;
+    line-height: 1.7;
+  }
+
+  .setup-guide strong {
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  /* ── 서브 페이지 ── */
+  #sub-page {
+    min-height: 100vh;
+    padding: 0 0 60px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .sub-header {
+    padding: 20px 20px 0;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 8px 14px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .back-btn:hover {
+    color: var(--text-light);
+    border-color: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.08);
+  }
+
+  .sub-content {
+    max-width: 720px;
+    margin: 24px auto 0;
+    padding: 0 20px;
+  }
+
+  .sub-cover {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 14px;
+    display: block;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .sub-cover-placeholder {
+    width: 100%;
+    height: 180px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--ocean-mid), var(--ocean-light));
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    opacity: 0.6;
+  }
+
+  .sub-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    background: rgba(232,197,71,0.12);
+    color: var(--gold);
+    border: 1px solid rgba(232,197,71,0.25);
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+
+  .sub-title {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-light);
+    line-height: 1.4;
+    margin-bottom: 14px;
+  }
+
+  .sub-date {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    opacity: 0.8;
+  }
+
+  .sub-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin-bottom: 20px;
+  }
+
+  .sub-body {
+    font-size: 15px;
+    color: #a8cce0;
+    line-height: 1.85;
+  }
+
+  .sub-body p { margin-bottom: 14px; }
+
+  .sub-notion-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--text-muted);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px 16px;
+    text-decoration: none;
+    transition: all 0.2s;
+    background: rgba(255,255,255,0.03);
+  }
+
+  .sub-notion-link:hover {
+    color: white;
+    border-color: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.07);
+  }
+
+  /* ── 에러/로딩 상태 ── */
+  .error-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+
+  .error-state .emoji { font-size: 32px; margin-bottom: 12px; display: block; }
+  .error-state p { font-size: 14px; line-height: 1.6; }
+  .error-state small { font-size: 12px; opacity: 0.7; display: block; margin-top: 8px; }
+
+  /* ── 반응형 ── */
+  @media (max-width: 480px) {
+    .page-header h1 { font-size: 22px; }
+    .sub-title { font-size: 21px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ 메인 페이지 ══ -->
+  <div id="main-page">
+    <div class="page-header">
+      <h1 id="gallery-title">nogari.com</h1>
+      <p id="gallery-subtitle">비늘을 클릭해 콘텐츠를 탐색하세요</p>
+    </div>
+
+    <div id="fish-wrap">
+      <svg id="fish-svg" viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- 몸통 클립 -->
+          <clipPath id="bodyClip">
+            <ellipse cx="415" cy="195" rx="245" ry="145"/>
+          </clipPath>
+        </defs>
+
+        <!-- ── 꼬리 지느러미 ── -->
+        <g id="fish-tail">
+          <path d="M 185 90 L 118 48 L 152 195 L 118 342 L 185 300 Z"
+                fill="var(--fish-fin)" stroke="var(--ocean-deep)" stroke-width="7" stroke-linejoin="round"/>
+        </g>
+
+        <!-- ── 몸통 배경 ── -->
+        <ellipse cx="415" cy="195" rx="245" ry="145"
+                 fill="var(--fish-body)" stroke="none"/>
+
+        <!-- ── 비늘 썸네일 그룹 ── -->
+        <g id="scales-group" clip-path="url(#bodyClip)"></g>
+
+        <!-- ── 몸통 윤곽선 ── -->
+        <ellipse cx="415" cy="195" rx="245" ry="145"
+                 fill="none" stroke="var(--ocean-deep)" stroke-width="7"/>
+
+        <!-- ── 등 지느러미 ── -->
+        <path d="M 300 52 Q 370 20 450 50 L 430 90 Q 370 68 300 90 Z"
+              fill="var(--fish-fin)" stroke="var(--ocean-deep)" stroke-width="5" stroke-linejoin="round"/>
+
+        <!-- ── 배 지느러미 ── -->
+        <path d="M 340 340 Q 390 368 440 340 L 420 312 Q 380 330 340 312 Z"
+              fill="var(--fish-fin)" stroke="var(--ocean-deep)" stroke-width="5" stroke-linejoin="round"/>
+
+        <!-- ── 꼬리 윤곽선 ── -->
+        <g id="fish-tail-outline">
+          <path d="M 185 90 L 118 48 L 152 195 L 118 342 L 185 300 Z"
+                fill="none" stroke="var(--ocean-deep)" stroke-width="7" stroke-linejoin="round"/>
+        </g>
+
+        <!-- ── 눈 ── -->
+        <!-- 눈 흰자 -->
+        <circle cx="560" cy="185" r="30"
+                fill="white" stroke="var(--ocean-deep)" stroke-width="6"/>
+        <!-- 홍채 -->
+        <circle cx="560" cy="185" r="20" fill="#5ba0c8" opacity="0.5"/>
+        <!-- 동공 (애니메이션) -->
+        <circle class="eye-pupil" cx="560" cy="185" r="12"
+                fill="var(--ocean-deep)"/>
+        <!-- 눈 하이라이트 -->
+        <circle cx="566" cy="178" r="5" fill="white" opacity="0.9"/>
+        <circle cx="572" cy="183" r="2.5" fill="white" opacity="0.6"/>
+
+        <!-- ── 입 ── -->
+        <path d="M 646 168 Q 672 185 646 202"
+              fill="none" stroke="var(--ocean-deep)" stroke-width="6"
+              stroke-linecap="round"/>
+
+        <!-- ── 측선 ── -->
+        <path d="M 215 188 Q 380 175 520 182"
+              fill="none" stroke="rgba(26,111,168,0.35)" stroke-width="2"
+              stroke-dasharray="5,8"/>
+      </svg>
+    </div>
+
+    <div id="status-bar">
+      <span class="dot"></span>
+      <span id="status-text">데이터를 불러오는 중...</span>
+    </div>
+  </div>
+
+  <!-- ══ 서브 페이지 ══ -->
+  <div id="sub-page">
+    <div class="sub-header">
+      <a class="back-btn" onclick="goBack()">
+        ← 목록으로 돌아가기
+      </a>
+    </div>
+    <div class="sub-content">
+      <div id="sub-cover-area"></div>
+      <div id="sub-tag-area"></div>
+      <h2 id="sub-title" class="sub-title"></h2>
+      <p id="sub-date" class="sub-date"></p>
+      <div class="sub-divider"></div>
+      <div id="sub-body" class="sub-body"></div>
+      <a id="sub-notion-link" class="sub-notion-link" href="#" target="_blank" style="display:none">
+        🔗 노션에서 전체 보기
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── 설정 버튼 ── -->
+<button id="config-btn" onclick="openConfig()" title="노션 연동 설정">⚙</button>
+
+<!-- ── 설정 모달 ── -->
+<div id="config-modal">
+  <div class="modal-box">
+    <h2>🔧 노션 연동 설정</h2>
+
+    <div class="setup-guide">
+      <p>
+        <strong>GitHub Actions 방식으로 운영됩니다</strong><br>
+        API Key는 GitHub Secrets에 안전하게 보관되고,<br>
+        매일 자동 또는 수동 실행 시 <strong>data.json</strong>이 생성됩니다.<br>
+        브라우저에 API Key가 노출되지 않아 안전합니다.<br>
+        <br>
+        📋 README의 GitHub 설정 가이드를 참고하세요.
+      </p>
+    </div>
+
+    <div class="field-group">
+      <label>갤러리 제목 (선택)</label>
+
+    <div class="field-group">
+      <label>갤러리 제목 (선택)</label>
+      <input type="text" id="input-title" placeholder="nogari.com"/>
+    </div>
+
+    <div class="field-group">
+      <label>부제목 (선택)</label>
+      <input type="text" id="input-subtitle" placeholder="비늘을 클릭해 콘텐츠를 탐색하세요"/>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeConfig()">취소</button>
+      <button class="btn-primary" onclick="saveConfig()">저장 후 불러오기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   설정 관리
+══════════════════════════════════════ */
+function loadConfig() {
+  return {
+    apiKey:   localStorage.getItem('fish_api_key')   || '',
+    dbId:     localStorage.getItem('fish_db_id')     || '',
+    title:    localStorage.getItem('fish_title')     || 'nogari.com',
+    subtitle: localStorage.getItem('fish_subtitle')  || '비늘을 클릭해 콘텐츠를 탐색하세요',
+  };
+}
+
+function openConfig() {
+  const c = loadConfig();
+  document.getElementById('input-api-key').value  = c.apiKey;
+  document.getElementById('input-db-id').value    = c.dbId;
+  document.getElementById('input-title').value    = c.title;
+  document.getElementById('input-subtitle').value = c.subtitle;
+  document.getElementById('config-modal').classList.add('open');
+}
+
+function closeConfig() {
+  document.getElementById('config-modal').classList.remove('open');
+}
+
+function saveConfig() {
+  const title    = document.getElementById('input-title').value.trim()    || 'nogari.com';
+  const subtitle = document.getElementById('input-subtitle').value.trim() || '비늘을 클릭해 콘텐츠를 탐색하세요';
+
+  localStorage.setItem('fish_title',     title);
+  localStorage.setItem('fish_subtitle',  subtitle);
+
+  document.getElementById('gallery-title').textContent    = title;
+  document.getElementById('gallery-subtitle').textContent = subtitle;
+
+  closeConfig();
+  fetchNotionData('', '');
+}
+
+/* ══════════════════════════════════════
+   비늘 위치 정의 (몸통 안쪽 배치)
+══════════════════════════════════════ */
+const SCALE_POSITIONS = [
+  // 1행 (상단)
+  { cx: 310, cy: 135, rx: 42, ry: 30 },
+  { cx: 380, cy: 118, rx: 42, ry: 30 },
+  { cx: 452, cy: 112, rx: 42, ry: 30 },
+  { cx: 522, cy: 125, rx: 38, ry: 28 },
+
+  // 2행 (중간 상단)
+  { cx: 270, cy: 178, rx: 42, ry: 30 },
+  { cx: 342, cy: 163, rx: 42, ry: 30 },
+  { cx: 415, cy: 158, rx: 42, ry: 30 },
+  { cx: 487, cy: 165, rx: 42, ry: 30 },
+  { cx: 548, cy: 175, rx: 35, ry: 27 },
+
+  // 3행 (중앙)
+  { cx: 258, cy: 220, rx: 40, ry: 30 },
+  { cx: 328, cy: 208, rx: 42, ry: 30 },
+  { cx: 400, cy: 202, rx: 42, ry: 30 },
+  { cx: 472, cy: 208, rx: 42, ry: 30 },
+
+  // 4행 (중간 하단)
+  { cx: 275, cy: 262, rx: 40, ry: 29 },
+  { cx: 345, cy: 255, rx: 42, ry: 30 },
+  { cx: 415, cy: 252, rx: 42, ry: 30 },
+  { cx: 485, cy: 255, rx: 40, ry: 29 },
+
+  // 5행 (하단)
+  { cx: 310, cy: 300, rx: 40, ry: 27 },
+  { cx: 378, cy: 296, rx: 40, ry: 27 },
+  { cx: 447, cy: 294, rx: 38, ry: 26 },
+];
+
+/* ══════════════════════════════════════
+   비늘 SVG 생성
+══════════════════════════════════════ */
+function buildScales(items) {
+  const g    = document.getElementById('scales-group');
+  const defs = document.querySelector('#fish-svg defs');
+  g.innerHTML = '';
+
+  // 기존 동적 clipPath 제거
+  document.querySelectorAll('[id^="sc-clip-"]').forEach(el => el.remove());
+
+  const count = Math.min(items.length, SCALE_POSITIONS.length);
+
+  for (let i = 0; i < count; i++) {
+    const p    = SCALE_POSITIONS[i];
+    const item = items[i];
+
+    // clipPath 생성
+    const clip = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+    clip.setAttribute('id', `sc-clip-${i}`);
+    clip.setAttribute('clipPathUnits', 'userSpaceOnUse');
+    const ce = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    ce.setAttribute('cx', p.cx);
+    ce.setAttribute('cy', p.cy);
+    ce.setAttribute('rx', p.rx);
+    ce.setAttribute('ry', p.ry);
+    clip.appendChild(ce);
+    defs.appendChild(clip);
+
+    const sg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    sg.setAttribute('class', 'scale-group');
+    sg.style.cursor = 'pointer';
+
+    // 배경 타원 (이미지 없을 때)
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    bg.setAttribute('cx', p.cx); bg.setAttribute('cy', p.cy);
+    bg.setAttribute('rx', p.rx); bg.setAttribute('ry', p.ry);
+    bg.setAttribute('fill', '#1a6fa8');
+    bg.setAttribute('opacity', '0.6');
+    sg.appendChild(bg);
+
+    // 썸네일 이미지
+    if (item.coverImage) {
+      const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      img.setAttribute('class', 'scale-img');
+      img.setAttribute('href', item.coverImage);
+      img.setAttribute('x',      p.cx - p.rx);
+      img.setAttribute('y',      p.cy - p.ry);
+      img.setAttribute('width',  p.rx * 2);
+      img.setAttribute('height', p.ry * 2);
+      img.setAttribute('clip-path', `url(#sc-clip-${i})`);
+      img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+      sg.appendChild(img);
+    } else {
+      // 이미지 없으면 이니셜/이모지 텍스트
+      const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('x', p.cx); txt.setAttribute('y', p.cy + 6);
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('font-size', '20');
+      txt.setAttribute('fill', 'white');
+      txt.setAttribute('clip-path', `url(#sc-clip-${i})`);
+      txt.textContent = item.emoji || '📄';
+      sg.appendChild(txt);
+    }
+
+    // 비늘 테두리
+    const border = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    border.setAttribute('class', 'scale-border');
+    border.setAttribute('cx', p.cx); border.setAttribute('cy', p.cy);
+    border.setAttribute('rx', p.rx); border.setAttribute('ry', p.ry);
+    border.setAttribute('fill', 'none');
+    border.setAttribute('stroke', 'rgba(255,255,255,0.5)');
+    border.setAttribute('stroke-width', '2');
+    sg.appendChild(border);
+
+    // 클릭 이벤트
+    sg.addEventListener('click', () => openSubPage(item));
+    g.appendChild(sg);
+  }
+
+  const cnt = count;
+  document.getElementById('status-text').textContent =
+    cnt > 0 ? `${cnt}개의 콘텐츠가 로드되었습니다` : '콘텐츠가 없습니다';
+}
+
+/* ══════════════════════════════════════
+   서브 페이지 열기/닫기
+══════════════════════════════════════ */
+function openSubPage(item) {
+  // 커버 이미지
+  const coverArea = document.getElementById('sub-cover-area');
+  if (item.coverImage) {
+    coverArea.innerHTML = `<img class="sub-cover" src="${item.coverImage}" alt="${item.title}"/>`;
+  } else {
+    coverArea.innerHTML = `<div class="sub-cover-placeholder">${item.emoji || '📄'}</div>`;
+  }
+
+  // 태그
+  document.getElementById('sub-tag-area').innerHTML =
+    item.tag ? `<span class="sub-tag">${item.tag}</span>` : '';
+
+  // 제목, 날짜, 본문
+  document.getElementById('sub-title').textContent = item.title || '제목 없음';
+  document.getElementById('sub-date').textContent  = item.date  ? `📅 ${item.date}` : '';
+  document.getElementById('sub-body').innerHTML    =
+    (item.description || '내용이 없습니다.').split('\n').map(l => `<p>${l}</p>`).join('');
+
+  // 노션 링크
+  const link = document.getElementById('sub-notion-link');
+  if (item.notionUrl) {
+    link.href = item.notionUrl;
+    link.style.display = 'inline-flex';
+  } else {
+    link.style.display = 'none';
+  }
+
+  document.getElementById('main-page').style.display = 'none';
+  document.getElementById('sub-page').style.display  = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goBack() {
+  document.getElementById('sub-page').style.display  = 'none';
+  document.getElementById('main-page').style.display = 'block';
+}
+
+/* ══════════════════════════════════════
+   Notion API 연동
+   ※ CORS 문제로 직접 호출 불가 → 프록시 경유
+   추천 프록시: Cloudflare Worker (notion-proxy.js 참조)
+══════════════════════════════════════ */
+async function fetchNotionData(apiKey, dbId) {
+  setStatus('Notion에서 데이터를 불러오는 중...');
+
+  try {
+    // GitHub Actions가 생성한 data.json을 직접 fetch
+    // (API Key, DB ID는 GitHub Secrets에 보관 — 브라우저에 노출되지 않음)
+    const res = await fetch('data.json?t=' + Date.now());
+
+    if (!res.ok) throw new Error('data.json을 찾을 수 없습니다. GitHub Actions를 먼저 실행해주세요.');
+
+    const data = await res.json();
+    const items = data.items || [];
+
+    if (items.length === 0) {
+      showEmptyState();
+    } else {
+      buildScales(items);
+      setStatus(items.length + '개의 콘텐츠가 로드되었습니다 · ' + (data.updatedAt || ''));
+    }
+
+  } catch (err) {
+    console.error('data.json fetch error:', err);
+    showErrorState(err.message);
+  }
+}
+
+/* ══════════════════════════════════════
+   Notion 응답 파싱
+   데이터베이스 속성명: 제목, 설명, 태그, 날짜, 커버이미지
+══════════════════════════════════════ */
+function parseNotionResults(results) {
+  return results.map(page => {
+    const props = page.properties;
+
+    const title = getTitle(props['제목'] || props['이름'] || props['Name'] || props['title']);
+    const desc  = getRichText(props['설명'] || props['Description']);
+    const tag   = getSelect(props['태그'] || props['Tag'] || props['카테고리']);
+    const date  = getDate(props['날짜'] || props['Date']);
+    const cover = getUrl(props['커버이미지'] || props['Cover'] || props['이미지']);
+
+    // 페이지 커버 이미지 폴백
+    const pageCover = page.cover
+      ? (page.cover.type === 'external' ? page.cover.external.url : page.cover.file.url)
+      : null;
+
+    return {
+      id:          page.id,
+      notionUrl:   page.url,
+      title,
+      description: desc,
+      tag,
+      date,
+      coverImage:  cover || pageCover,
+      emoji:       page.icon?.emoji || '📄',
+    };
+  });
+}
+
+function getTitle(prop) {
+  if (!prop) return '제목 없음';
+  if (prop.type === 'title') return prop.title.map(t => t.plain_text).join('');
+  return '제목 없음';
+}
+
+function getRichText(prop) {
+  if (!prop) return '';
+  if (prop.type === 'rich_text') return prop.rich_text.map(t => t.plain_text).join('');
+  return '';
+}
+
+function getSelect(prop) {
+  if (!prop) return '';
+  if (prop.type === 'select' && prop.select) return prop.select.name;
+  if (prop.type === 'multi_select') return prop.multi_select.map(s => s.name).join(', ');
+  return '';
+}
+
+function getDate(prop) {
+  if (!prop || prop.type !== 'date' || !prop.date) return '';
+  return prop.date.start;
+}
+
+function getUrl(prop) {
+  if (!prop) return '';
+  if (prop.type === 'url') return prop.url;
+  if (prop.type === 'files' && prop.files.length > 0) {
+    const f = prop.files[0];
+    return f.type === 'external' ? f.external.url : f.file.url;
+  }
+  return '';
+}
+
+/* ══════════════════════════════════════
+   UI 상태 표시
+══════════════════════════════════════ */
+function setStatus(msg) {
+  document.getElementById('status-text').textContent = msg;
+}
+
+function showEmptyState() {
+  document.getElementById('status-text').textContent = '데이터베이스가 비어있습니다';
+  document.getElementById('scales-group').innerHTML = '';
+}
+
+function showErrorState(msg) {
+  document.getElementById('status-text').textContent = 'API 연동 오류 — 설정을 확인하세요';
+
+  // 데모 데이터로 대체 표시
+  buildScales(DEMO_DATA);
+}
+
+/* ══════════════════════════════════════
+   데모 데이터 (API 미설정 시)
+══════════════════════════════════════ */
+const DEMO_DATA = [
+  { title:'꿈키움 특강 안내',     description:'대학 연계 진로탐색 특강 프로그램입니다.\n다양한 분야 전문가가 참여합니다.',   tag:'꿈키움',   date:'2026-04-01', coverImage:'https://picsum.photos/seed/dream1/400/250',  emoji:'🎓' },
+  { title:'온라인 공동교육과정',  description:'충남 온라인 학교 공동 교육 프로그램.\n선택과목을 다양하게 수강할 수 있습니다.', tag:'교육과정', date:'2026-03-28', coverImage:'https://picsum.photos/seed/edu2/400/250',   emoji:'💻' },
+  { title:'고교학점제 설명회',    description:'2025년 전면 시행 고교학점제 안내.\n학교별 적용 현황을 소개합니다.',           tag:'학점제',   date:'2026-03-20', coverImage:'https://picsum.photos/seed/school3/400/250', emoji:'📚' },
+  { title:'학교 공간 혁신 사례',  description:'미래형 교육공간으로 탈바꿈하는\n학교 리모델링 프로젝트 사례입니다.',         tag:'공간혁신', date:'2026-03-15', coverImage:'https://picsum.photos/seed/space4/400/250',  emoji:'🏫' },
+  { title:'교사 연수 안내',       description:'교원 전문성 향상 연수 기회.\n신청 방법과 일정을 안내합니다.',                 tag:'연수',     date:'2026-03-10', coverImage:'https://picsum.photos/seed/train5/400/250',  emoji:'✏️' },
+  { title:'진로 박람회',          description:'지역 기업과 대학이 참여하는\n진로 탐색 박람회 행사입니다.',                   tag:'진로',     date:'2026-03-05', coverImage:'https://picsum.photos/seed/fair6/400/250',   emoji:'🗺️' },
+  { title:'독서 캠페인',          description:'한 학기 한 권 읽기 캠페인.\n참여 학교 우수 사례를 소개합니다.',               tag:'독서',     date:'2026-02-28', coverImage:'https://picsum.photos/seed/book7/400/250',   emoji:'📖' },
+  { title:'환경 교육 주간',       description:'탄소 중립과 환경 보전을 주제로 한\n환경 교육 주간 행사입니다.',               tag:'환경',     date:'2026-02-20', coverImage:'https://picsum.photos/seed/eco8/400/250',    emoji:'🌿' },
+  { title:'방과후 학교 안내',     description:'다양한 방과후 프로그램 운영 현황.\n우수 사례를 공유합니다.',                   tag:'방과후',   date:'2026-02-15', coverImage:'https://picsum.photos/seed/after9/400/250',  emoji:'🎨' },
+  { title:'학부모 소통 행사',     description:'학교와 가정이 함께하는 소통 프로그램.\n설명회 일정을 안내합니다.',             tag:'학부모',   date:'2026-02-10', coverImage:'https://picsum.photos/seed/par10/400/250',   emoji:'👨‍👩‍👧' },
+  { title:'학생 자치 활동',       description:'학생회 중심 자치 활동 우수 사례.\n지원 방안을 소개합니다.',                    tag:'자치',     date:'2026-02-05', coverImage:'https://picsum.photos/seed/stu11/400/250',   emoji:'🙋' },
+  { title:'스마트 멘토링 프로그램', description:'아산 스마트 멘토링 프로그램 안내.\n참여 방법과 혜택을 소개합니다.',          tag:'멘토링',   date:'2026-01-30', coverImage:'https://picsum.photos/seed/ment12/400/250',  emoji:'🤝' },
+];
+
+/* ══════════════════════════════════════
+   초기화
+══════════════════════════════════════ */
+(function init() {
+  const c = loadConfig();
+  document.getElementById('gallery-title').textContent    = c.title;
+  document.getElementById('gallery-subtitle').textContent = c.subtitle;
+
+  if (c.apiKey && c.dbId) {
+    fetchNotionData(c.apiKey, c.dbId);
+  } else {
+    // 데모 모드
+    buildScales(DEMO_DATA);
+    setStatus('데모 모드 — ⚙ 버튼으로 노션 연동 설정');
+  }
+})();
+</script>
+</body>
+</html>
