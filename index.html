@@ -824,9 +824,10 @@ async function fetchNotionData(apiKey, dbId) {
   setStatus('Notion에서 데이터를 불러오는 중...');
 
   try {
-    // GitHub Actions가 생성한 data.json을 직접 fetch
-    // (API Key, DB ID는 GitHub Secrets에 보관 — 브라우저에 노출되지 않음)
-    const res = await fetch('data.json?t=' + Date.now());
+    // 현재 페이지 기준 절대경로로 data.json fetch
+    const base = location.href.replace(/\/[^\/]*$/, '').replace(/\/$/, '');
+    const url  = base + '/data.json?t=' + Date.now();
+    const res  = await fetch(url);
 
     if (!res.ok) throw new Error('data.json을 찾을 수 없습니다. GitHub Actions를 먼저 실행해주세요.');
 
@@ -925,10 +926,10 @@ function showEmptyState() {
 }
 
 function showErrorState(msg) {
-  document.getElementById('status-text').textContent = 'API 연동 오류 — 설정을 확인하세요';
-
-  // 데모 데이터로 대체 표시
+  document.getElementById('status-text').textContent = 'data.json 로딩 실패 — Actions 탭에서 workflow를 실행해주세요';
+  // data.json이 없을 때만 데모 데이터 표시
   buildScales(DEMO_DATA);
+  setStatus('데모 모드 — GitHub Actions를 실행하면 노션 데이터로 교체됩니다');
 }
 
 /* ══════════════════════════════════════
@@ -957,13 +958,8 @@ const DEMO_DATA = [
   document.getElementById('gallery-title').textContent    = c.title;
   document.getElementById('gallery-subtitle').textContent = c.subtitle;
 
-  if (c.apiKey && c.dbId) {
-    fetchNotionData(c.apiKey, c.dbId);
-  } else {
-    // 데모 모드
-    buildScales(DEMO_DATA);
-    setStatus('데모 모드 — ⚙ 버튼으로 노션 연동 설정');
-  }
+  // 항상 data.json 먼저 시도 → 실패 시 데모 데이터
+  fetchNotionData('', '');
 })();
 </script>
 </body>
