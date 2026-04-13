@@ -1,17 +1,7 @@
 {
-  "updatedAt": "2026-04-13 06:32 KST",
+  "updatedAt": "2026-04-14 06:44 KST",
   "count": 2,
   "items": [
-    {
-      "id": "33c7c113-494d-8076-ace5-e31a110e4966",
-      "notionUrl": "https://www.notion.so/33c7c113494d8076ace5e31a110e4966",
-      "title": "생면 파스타",
-      "description": "재료투입량비고밀가루 (00분 또는 강력분)200g\n종이컵으로 수북하게 \n약 1컵 반달걀2개\n특란(약 60g) 기준\n소금2g\n티스푼으로 \n약 1/2 작은술올리브유1/2 큰술\n반죽의 유연함과 윤기용\n덧가루용 밀가루약간\n면을 밀고 썰 때 달라붙지 않게",
-      "tag": "cook",
-      "date": "2026-04-08",
-      "coverImage": "https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/202109/03/c252edc6-d014-4fd7-b35c-48b9cfaf5ad8.jpg",
-      "emoji": "📄"
-    },
     {
       "id": "33c7c113-494d-80cf-bd33-eea4136a32aa",
       "notionUrl": "https://www.notion.so/nogari-test-33c7c113494d80cfbd33eea4136a32aa",
@@ -20,6 +10,16 @@
       "tag": "AI",
       "date": "2026-04-08",
       "coverImage": "https://i.namu.wiki/i/sDBbZQogz3HWKf5a3XQl9AguhXDGqA7-NtHO0D3D9ephkxxslzzmuJzBKr8GTdZpnajq7cePzTvyRSeF7QkIxg.webp",
+      "emoji": "📄"
+    },
+    {
+      "id": "33c7c113-494d-8076-ace5-e31a110e4966",
+      "notionUrl": "https://www.notion.so/33c7c113494d8076ace5e31a110e4966",
+      "title": "생면 파스타",
+      "description": "재료투입량비고밀가루 (00분 또는 강력분)200g\n종이컵으로 수북하게 \n약 1컵 반달걀2개\n특란(약 60g) 기준\n소금2g\n티스푼으로 \n약 1/2 작은술올리브유1/2 큰술\n반죽의 유연함과 윤기용\n덧가루용 밀가루약간\n면을 밀고 썰 때 달라붙지 않게",
+      "tag": "cook",
+      "date": "2026-04-08",
+      "coverImage": "https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/202109/03/c252edc6-d014-4fd7-b35c-48b9cfaf5ad8.jpg",
       "emoji": "📄"
     }
   ]
