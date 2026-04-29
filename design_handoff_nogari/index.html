@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nogari</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a2240;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #c8e4f0;
+    }
+
+    .scene {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .fish-wrap {
+      position: relative;
+      width: min(96vw, 1200px);
+      filter: drop-shadow(0 0 60px oklch(0.55 0.22 200 / 0.45));
+      transition: filter 0.5s;
+      animation: fishFloat ease-in-out 5s infinite;
+    }
+    .fish-wrap:hover {
+      filter: drop-shadow(0 0 90px oklch(0.65 0.25 195 / 0.55));
+    }
+    @keyframes fishFloat {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-10px); }
+    }
+
+    .fish-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+    /* Scale hover */
+    .scale-group { cursor: pointer; }
+    .scale-border {
+      fill: none;
+      stroke: oklch(0.55 0.18 195 / 0.55);
+      stroke-width: 1.5;
+      transition: stroke 0.2s, stroke-width 0.2s;
+    }
+    .scale-group:hover .scale-border {
+      stroke: oklch(0.85 0.28 185);
+      stroke-width: 2;
+      filter: drop-shadow(0 0 8px oklch(0.7 0.25 185));
+    }
+    .scale-img { transition: filter 0.2s; }
+    .scale-group:hover .scale-img { filter: brightness(1.35) saturate(1.2); }
+
+    /* Overlay */
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      background: transparent;
+      pointer-events: none;
+      z-index: 90;
+      transition: background 0.4s;
+    }
+    .backdrop.active {
+      background: rgba(1, 5, 18, 0.72);
+      pointer-events: all;
+    }
+
+    .overlay {
+      position: fixed;
+      right: 0; top: 0;
+      height: 100%;
+      width: min(420px, 100vw);
+      background: linear-gradient(165deg, #040f24 0%, #020a1c 100%);
+      border-left: 1px solid oklch(0.55 0.15 200 / 0.25);
+      transform: translateX(100%);
+      transition: transform 0.45s cubic-bezier(0.4,0,0.2,1);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .overlay.open { transform: translateX(0); }
+
+    .overlay-img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .overlay-body {
+      padding: 28px 28px 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .overlay-meta {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: oklch(0.62 0.15 195);
+    }
+
+    .overlay-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #e8f4fb;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+
+    .overlay-desc {
+      font-size: 14px;
+      line-height: 1.7;
+      color: oklch(0.68 0.06 210);
+      flex: 1;
+    }
+
+    .overlay-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border: 1px solid oklch(0.55 0.18 195 / 0.4);
+      border-radius: 4px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: oklch(0.75 0.18 188);
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+      width: fit-content;
+      margin-top: auto;
+    }
+    .overlay-link:hover {
+      border-color: oklch(0.75 0.22 185);
+      background: oklch(0.75 0.18 188 / 0.08);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 16px; right: 16px;
+      width: 32px; height: 32px;
+      background: rgba(2,15,36,0.8);
+      border: 1px solid oklch(0.5 0.12 200 / 0.4);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #a0c8e0;
+      font-size: 16px;
+      transition: background 0.2s, color 0.2s;
+      z-index: 10;
+    }
+    .close-btn:hover { background: rgba(5,30,60,0.9); color: #fff; }
+
+    /* Bubble */
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid oklch(0.72 0.12 200 / 0.25);
+      background: oklch(0.72 0.12 200 / 0.04);
+      animation: floatBubble linear infinite;
+      pointer-events: none;
+    }
+    @keyframes floatBubble {
+      0%   { transform: translateY(0) translateX(0); opacity: 0; }
+      8%   { opacity: 0.7; }
+      90%  { opacity: 0.25; }
+      100% { transform: translateY(-110vh) translateX(var(--drift, 20px)); opacity: 0; }
+    }
+
+    /* Seaweed */
+    @keyframes sway {
+      0%,100% { transform: rotate(-6deg); }
+      50%     { transform: rotate(6deg); }
+    }
+    .seaweed-group { transform-origin: center bottom; animation: sway ease-in-out 4s infinite; }
+    .seaweed-group:nth-child(2) { animation-duration: 3.5s; animation-delay: -1.2s; }
+    .seaweed-group:nth-child(3) { animation-duration: 4.8s; animation-delay: -0.7s; }
+    .seaweed-group:nth-child(4) { animation-duration: 3.8s; animation-delay: -2.1s; }
+
+    /* Title */
+    .site-title {
+      position: fixed;
+      top: 24px; left: 32px;
+      font-size: 13px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: oklch(0.58 0.12 200);
+      z-index: 10;
+    }
+
+    .scale-count {
+      position: fixed;
+      bottom: 24px; left: 32px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: oklch(0.42 0.1 200);
+      z-index: 10;
+    }
+
+    /* CMS badge */
+    .cms-badge {
+      position: fixed;
+      bottom: 24px; right: 32px;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: oklch(0.38 0.1 200);
+      z-index: 10;
+      text-transform: uppercase;
+    }
+    .cms-badge span {
+      color: oklch(0.58 0.18 188);
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo } = React;
+
+// ─── Demo data (replace with CMS API call) ───────────────────────────────────
+// Recommended CMS: Notion API or Airtable
+// Each item: { id, title, image, thumb, description, date, url }
+const DEMO_ITEMS = Array.from({ length: 55 }, (_, i) => ({
+  id: i + 1,
+  title: `작품 ${String(i + 1).padStart(2, '0')}`,
+  image: `https://picsum.photos/seed/nog${i + 1}/800/600`,
+  thumb: `https://picsum.photos/seed/nog${i + 1}/120/120`,
+  description: `심해의 빛처럼, 각 이미지는 어둠 속에서 고유한 이야기를 품고 있습니다. 이 작품은 컬렉션의 ${i + 1}번째 기록입니다.`,
+  date: `2026.0${(i % 9) + 1}`,
+  url: '#',
+}));
+
+// ─── Geometry ────────────────────────────────────────────────────────────────
+const VW = 900, VH = 500;
+
+// Balanced fish body polygon — sleek but not harsh
+const BODY_POLY = [
+  [148,250],[158,215],[178,180],[210,155],[252,136],
+  [302,122],[360,114],[422,110],[484,109],[544,112],
+  [598,120],[645,134],[683,154],[712,178],[730,205],
+  [738,250],[730,295],[712,322],[683,346],[645,366],
+  [598,380],[544,388],[484,391],[422,390],[360,386],
+  [302,378],[252,364],[210,345],[178,320],[158,285],
+];
+
+// Dorsal fin — medium pointed
+const DORSAL_POLY = "M 368,114 C 392,72 445,54 508,70 C 546,82 568,102 570,114 Z";
+
+// Pectoral fin
+const PECTORAL_PATH = "M 608,222 C 588,254 572,284 596,304 C 624,290 648,268 644,246 Z";
+
+// Tail — clean fork, not heart
+const TAIL_PATH = "M 148,250 L 48,162 L 96,250 L 48,338 Z";
+
+// No anal fin in balanced version
+const ANAL_FIN = "";
+
+const EYE_CX = 700, EYE_CY = 210, EYE_R = 30;
+const IRIS_R = 22, PUPIL_R = 11;
+const PUPIL_TRAVEL = 6;
+
+// ─── Point-in-polygon ────────────────────────────────────────────────────────
+function pip(px, py, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi))
+      inside = !inside;
+  }
+  return inside;
+}
+
+// ─── Generate scale positions ─────────────────────────────────────────────
+const SCALE_R = 21;
+const COL_STEP = SCALE_R * 2 * 0.92;
+const ROW_STEP = SCALE_R * Math.sqrt(3) * 0.90;
+
+function buildScales(items) {
+  const positions = [];
+  const maxScales = items.length;
+  for (let row = 0; positions.length < maxScales && row < 30; row++) {
+    const offsetX = row % 2 === 0 ? 0 : COL_STEP / 2;
+    const y = 120 + row * ROW_STEP;
+    for (let col = 0; positions.length < maxScales && col < 30; col++) {
+      const x = 162 + col * COL_STEP + offsetX;
+      if (x > 835 || y > 395) continue;
+      if (!pip(x, y, BODY_POLY)) continue;
+      const dx = x - EYE_CX, dy = y - EYE_CY;
+      if (Math.sqrt(dx * dx + dy * dy) < EYE_R + 20) continue;
+      positions.push({ x, y, item: items[positions.length] });
+    }
+  }
+  return positions;
+}
+
+// ─── Bubbles ─────────────────────────────────────────────────────────────────
+function Bubbles() {
+  const bubbles = useMemo(() => Array.from({ length: 22 }, (_, i) => ({
+    id: i,
+    left: 5 + Math.random() * 90,
+    bottom: Math.random() * 30,
+    size: 4 + Math.random() * 18,
+    dur: 7 + Math.random() * 12,
+    delay: Math.random() * 14,
+    drift: (Math.random() - 0.5) * 60,
+  })), []);
+
+  return (
+    <>{bubbles.map(b => (
+      <div key={b.id} className="bubble" style={{
+        left: `${b.left}%`, bottom: `${b.bottom}%`,
+        width: b.size, height: b.size,
+        animationDuration: `${b.dur}s`,
+        animationDelay: `${b.delay}s`,
+        '--drift': `${b.drift}px`,
+      }} />
+    ))}</>
+  );
+}
+
+// ─── Seaweed ──────────────────────────────────────────────────────────────────
+function Seaweed() {
+  const weeds = [
+    { x: 80,  h: 120, color: 'oklch(0.42 0.18 155)' },
+    { x: 160, h: 90,  color: 'oklch(0.38 0.16 160)' },
+    { x: 820, h: 110, color: 'oklch(0.40 0.17 158)' },
+    { x: 880, h: 80,  color: 'oklch(0.36 0.15 162)' },
+  ];
+  return (
+    <svg style={{position:'absolute',bottom:0,left:0,width:'100%',height:'200px',pointerEvents:'none'}} viewBox="0 0 960 200" preserveAspectRatio="none">
+      {weeds.map((w, i) => (
+        <g key={i} className="seaweed-group">
+          <path
+            d={`M ${w.x} 200 C ${w.x-20} ${200-w.h*0.4} ${w.x+20} ${200-w.h*0.7} ${w.x} ${200-w.h}`}
+            stroke={w.color} strokeWidth="3.5" fill="none" strokeLinecap="round"
+            opacity="0.7"
+          />
+          <path
+            d={`M ${w.x} ${200-w.h*0.5} C ${w.x+25} ${200-w.h*0.6} ${w.x+15} ${200-w.h*0.85} ${w.x+8} ${200-w.h*0.75}`}
+            stroke={w.color} strokeWidth="2.5" fill="none" strokeLinecap="round"
+            opacity="0.5"
+          />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// ─── Eye ──────────────────────────────────────────────────────────────────────
+function FishEye({ cx, cy }) {
+  const [pupil, setPupil] = useState({ x: cx, y: cy });
+  const rafRef = useRef();
+
+  useEffect(() => {
+    let t = 0;
+    const tick = () => {
+      t += 0.006;
+      const px = cx + Math.sin(t) * PUPIL_TRAVEL;
+      const py = cy + Math.sin(t * 2) * (PUPIL_TRAVEL * 0.5);
+      setPupil({ x: px, y: py });
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [cx, cy]);
+
+  return (
+    <g>
+      {/* Outer soft glow */}
+      <circle cx={cx} cy={cy} r={EYE_R + 4} fill="oklch(0.70 0.16 205 / 0.1)" />
+      {/* Sclera — off-white, not pure white */}
+      <circle cx={cx} cy={cy} r={EYE_R} fill="oklch(0.92 0.03 210)" />
+      {/* Iris — deep teal */}
+      <circle cx={cx} cy={cy} r={IRIS_R} fill="oklch(0.40 0.24 195)" />
+      {/* Iris inner ring */}
+      <circle cx={cx} cy={cy} r={IRIS_R - 6} fill="none"
+        stroke="oklch(0.60 0.26 185)" strokeWidth="1.5" opacity="0.5" />
+      {/* Pupil */}
+      <circle cx={pupil.x} cy={pupil.y} r={PUPIL_R} fill="#040c18" />
+      {/* Single clean sparkle */}
+      <circle cx={pupil.x - 4} cy={pupil.y - 4} r={4.5} fill="white" opacity="0.85" />
+      {/* Eye outline */}
+      <circle cx={cx} cy={cy} r={EYE_R} fill="none"
+        stroke="oklch(0.42 0.18 215)" strokeWidth="1.8" />
+    </g>
+  );
+}
+
+// ─── Scale ────────────────────────────────────────────────────────────────────
+function Scale({ x, y, r, item, index, onClick }) {
+  const clipId = `sc-${index}`;
+  return (
+    <g className="scale-group" onClick={() => onClick(item)} role="button" aria-label={item.title}>
+      <defs>
+        <clipPath id={clipId}>
+          <circle cx={x} cy={y} r={r - 1} />
+        </clipPath>
+      </defs>
+      {/* Background fill */}
+      <circle cx={x} cy={y} r={r} fill="oklch(0.12 0.1 215)" />
+      {/* Image */}
+      <image
+        className="scale-img"
+        href={item.thumb}
+        x={x - r + 1} y={y - r + 1}
+        width={(r - 1) * 2} height={(r - 1) * 2}
+        clipPath={`url(#${clipId})`}
+        preserveAspectRatio="xMidYMid slice"
+      />
+      {/* Border */}
+      <circle className="scale-border" cx={x} cy={y} r={r - 0.5} />
+      {/* Scale arc highlight (fish scale effect) */}
+      <path
+        d={`M ${x - r * 0.8} ${y + r * 0.1} A ${r * 0.9} ${r * 0.9} 0 0 1 ${x + r * 0.8} ${y + r * 0.1}`}
+        fill="none"
+        stroke="oklch(0.75 0.15 200 / 0.12)"
+        strokeWidth="1"
+      />
+    </g>
+  );
+}
+
+// ─── Overlay ──────────────────────────────────────────────────────────────────
+function Overlay({ item, onClose }) {
+  const open = item !== null;
+  return (
+    <>
+      <div className={`backdrop ${open ? 'active' : ''}`} onClick={onClose} />
+      <div className={`overlay ${open ? 'open' : ''}`}>
+        {item && <>
+          <div style={{position:'relative',flexShrink:0}}>
+            <img className="overlay-img" src={item.image} alt={item.title} />
+            <button className="close-btn" onClick={onClose} aria-label="닫기">✕</button>
+          </div>
+          <div className="overlay-body">
+            <div className="overlay-meta">{item.date} · #{String(item.id).padStart(3,'0')}</div>
+            <div className="overlay-title">{item.title}</div>
+            <div className="overlay-desc">{item.description}</div>
+            <a href={item.url} className="overlay-link">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 10L10 2M10 2H5M10 2V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              원문 보기
+            </a>
+          </div>
+        </>}
+      </div>
+    </>
+  );
+}
+
+// ─── Fish SVG ────────────────────────────────────────────────────────────────
+function FishSVG({ scales, onScaleClick }) {
+  return (
+    <svg
+      className="fish-svg"
+      viewBox={`0 0 ${VW} ${VH}`}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        {/* Balanced body gradient — mid-dark teal */}
+        <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="oklch(0.19 0.15 218)" />
+          <stop offset="55%" stopColor="oklch(0.15 0.12 215)" />
+          <stop offset="100%" stopColor="oklch(0.12 0.09 210)" />
+        </linearGradient>
+        {/* Fin gradient */}
+        <linearGradient id="finGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="oklch(0.21 0.16 218)" />
+          <stop offset="100%" stopColor="oklch(0.12 0.09 215)" />
+        </linearGradient>
+      </defs>
+
+      {/* ── Tail fin (rounded, cute) ── */}
+      <path d={TAIL_PATH}
+        fill="url(#finGrad)"
+        stroke="oklch(0.48 0.2 210 / 0.5)" strokeWidth="1.5"
+      />
+
+      {/* ── Dorsal fin ── */}
+      <path d={DORSAL_POLY}
+        fill="url(#finGrad)"
+        stroke="oklch(0.48 0.2 210 / 0.45)" strokeWidth="1.2"
+      />
+
+      {/* ── Anal fin (tiny cute bottom fin) ── */}
+      <path d={ANAL_FIN}
+        fill="url(#finGrad)"
+        stroke="oklch(0.45 0.18 210 / 0.4)" strokeWidth="1"
+      />
+
+      {/* ── Pectoral fin ── */}
+      <path d={PECTORAL_PATH}
+        fill="oklch(0.20 0.15 218)"
+        stroke="oklch(0.45 0.18 210 / 0.4)" strokeWidth="1"
+      />
+
+      {/* ── Main body (balanced — sleek but soft) ── */}
+      <path
+        d="M 738,250
+           C 732,208 716,174 692,152
+           C 666,128 634,116 596,110
+           C 554,104 506,103 456,105
+           C 406,107 358,113 312,124
+           C 268,135 230,150 200,170
+           C 172,190 156,216 150,245
+           C 144,274 154,302 174,324
+           C 196,348 228,364 268,376
+           C 310,388 358,394 410,393
+           C 462,392 514,388 562,380
+           C 606,372 646,358 678,338
+           C 710,318 730,292 738,262
+           C 740,258 740,254 738,250 Z"
+        fill="url(#bodyGrad)"
+        stroke="oklch(0.50 0.22 205 / 0.38)"
+        strokeWidth="1.8"
+      />
+
+      {/* ── Body sheen (top edge) ── */}
+      <path
+        d="M 200,172 C 288,138 388,116 490,110 C 576,105 648,120 700,150"
+        fill="none"
+        stroke="oklch(0.68 0.2 200 / 0.13)"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+
+      {/* ── Lateral line ── */}
+      <path
+        d="M 210,248 C 360,262 510,264 640,255 C 685,252 715,256 738,264"
+        fill="none"
+        stroke="oklch(0.55 0.16 200 / 0.18)"
+        strokeWidth="1"
+        strokeDasharray="3 6"
+      />
+
+      {/* ── Scales ── */}
+      {scales.map((s, i) => (
+        <Scale key={i} x={s.x} y={s.y} r={SCALE_R} item={s.item} index={i} onClick={onScaleClick} />
+      ))}
+
+      {/* ── Eye ── */}
+      <FishEye cx={EYE_CX} cy={EYE_CY} />
+
+      {/* ── Subtle mouth (small arc, not smile/frown) ── */}
+      <path
+        d="M 728,268 Q 740,278 732,286"
+        fill="none"
+        stroke="oklch(0.38 0.14 220)" strokeWidth="2"
+        strokeLinecap="round" opacity="0.6"
+      />
+    </svg>
+  );
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+function App() {
+  const [selected, setSelected] = useState(null);
+  const scales = useMemo(() => buildScales(DEMO_ITEMS), []);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') setSelected(null); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  return (
+    <div className="scene">
+      {/* Background particles */}
+      <Bubbles />
+      <Seaweed />
+
+      {/* Subtle deep-sea light rays */}
+      <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',opacity:0.14}} viewBox="0 0 100 100" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="ray1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#4af" /><stop offset="100%" stopColor="transparent" />
+          </linearGradient>
+        </defs>
+        {[15,28,44,60,75,88].map((x, i) => (
+          <polygon key={i} points={`${x-4},0 ${x+4},0 ${x+12},100 ${x-12},100`} fill="url(#ray1)" />
+        ))}
+      </svg>
+
+      {/* Site title */}
+      <div className="site-title">nogari</div>
+      <div className="scale-count">{scales.length} images</div>
+      <div className="cms-badge">powered by <span>notion api</span></div>
+
+      {/* Fish */}
+      <div className="fish-wrap">
+        <FishSVG scales={scales} onScaleClick={setSelected} />
+      </div>
+
+      {/* Overlay */}
+      <Overlay item={selected} onClose={() => setSelected(null)} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

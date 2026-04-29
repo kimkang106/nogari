@@ -93,6 +93,70 @@ def get_url(prop) -> str:
     return ""
 
 
+def get_page_content(page_id: str) -> str:
+    """페이지 블록을 HTML 문자열로 변환"""
+    url = f"https://api.notion.com/v1/blocks/{page_id}/children"
+    try:
+        res = requests.get(url, headers=HEADERS, params={"page_size": 100})
+        res.raise_for_status()
+        blocks = res.json().get("results", [])
+        return _blocks_to_html(blocks)
+    except Exception as e:
+        print(f"  [블록 조회 실패] {page_id[:8]}...: {e}")
+        return ""
+
+
+def _blocks_to_html(blocks: list) -> str:
+    parts = []
+    i = 0
+    while i < len(blocks):
+        block = blocks[i]
+        btype = block.get("type", "")
+        content = block.get(btype, {})
+        rich_texts = content.get("rich_text", [])
+        text = "".join(t.get("plain_text", "") for t in rich_texts)
+
+        if btype == "paragraph":
+            if text.strip():
+                parts.append(f"<p>{text}</p>")
+        elif btype == "heading_1":
+            parts.append(f"<h2>{text}</h2>")
+        elif btype in ("heading_2", "heading_3"):
+            parts.append(f"<h3>{text}</h3>")
+        elif btype == "bulleted_list_item":
+            items_html = [f"<li>{text}</li>"]
+            while i + 1 < len(blocks) and blocks[i + 1].get("type") == "bulleted_list_item":
+                i += 1
+                nb = blocks[i].get(blocks[i].get("type", ""), {})
+                nt = "".join(t.get("plain_text", "") for t in nb.get("rich_text", []))
+                items_html.append(f"<li>{nt}</li>")
+            parts.append("<ul>" + "".join(items_html) + "</ul>")
+        elif btype == "numbered_list_item":
+            items_html = [f"<li>{text}</li>"]
+            while i + 1 < len(blocks) and blocks[i + 1].get("type") == "numbered_list_item":
+                i += 1
+                nb = blocks[i].get(blocks[i].get("type", ""), {})
+                nt = "".join(t.get("plain_text", "") for t in nb.get("rich_text", []))
+                items_html.append(f"<li>{nt}</li>")
+            parts.append("<ol>" + "".join(items_html) + "</ol>")
+        elif btype == "to_do":
+            checked = "checked" if content.get("checked") else ""
+            parts.append(f"<p><input type='checkbox' {checked} disabled> {text}</p>")
+        elif btype == "quote":
+            parts.append(f"<blockquote>{text}</blockquote>")
+        elif btype == "divider":
+            parts.append("<hr>")
+        elif btype == "image":
+            img_url = (content.get("external") or {}).get("url") or \
+                      (content.get("file") or {}).get("url", "")
+            if img_url:
+                caption = "".join(t.get("plain_text", "") for t in content.get("caption", []))
+                parts.append(f'<img src="{img_url}" alt="{caption}">')
+
+        i += 1
+    return "\n".join(parts)
+
+
 def get_page_cover(page: dict) -> str:
     cover = page.get("cover")
     if not cover:
@@ -124,6 +188,7 @@ def parse_page(page: dict) -> dict:
         "notionUrl":   page.get("url", ""),
         "title":       get_title(title_prop),
         "description": get_rich_text(desc_prop),
+        "content":     get_page_content(page["id"]),
         "tag":         get_select(tag_prop),
         "date":        get_date(date_prop),
         "coverImage":  cover_image,
